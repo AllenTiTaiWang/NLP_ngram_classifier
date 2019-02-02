@@ -20,7 +20,17 @@ def read_smsspam(smsspam_path: str) -> Iterator[Tuple[Text, Text]]:
     :param smsspam_path: The path of an SMSSpam file, formatted as above.
     :return: An iterator over (label, text) tuples.
     """
+    TexLab = []
+    with open(smsspam_path) as f:
+        for line in f:
+            line = line.strip().split("\t")
+            label = line[0]
+            text = line[1]
+            TexLab.append((label, text))
+    
+    return iter(TexLab)
 
+from sklearn.feature_extraction.text import CountVectorizer
 
 class TextToFeatures:
     def __init__(self, texts: Iterable[Text]):
@@ -37,6 +47,8 @@ class TextToFeatures:
 
         :param texts: The training texts.
         """
+        self.vec = CountVectorizer(ngram_range=(1, 2))
+        self.X = self.vec.fit_transform(texts)
 
     def index(self, feature: Text):
         """Returns the index in the vocabulary of the given feature value.
@@ -44,6 +56,8 @@ class TextToFeatures:
         :param feature: A feature
         :return: The unique integer index associated with the feature.
         """
+        n = self.vec.get_feature_names().index(feature)
+        return n
 
     def __call__(self, texts: Iterable[Text]) -> NDArray:
         """Creates a feature matrix from a sequence of texts.
@@ -59,7 +73,10 @@ class TextToFeatures:
         :param texts: A sequence of texts.
         :return: A matrix, with one row of feature values for each text.
         """
+        x = self.vec.transform(texts)
+        return x.toarray()
 
+from sklearn import preprocessing
 
 class TextToLabels:
     def __init__(self, labels: Iterable[Text]):
@@ -72,6 +89,8 @@ class TextToLabels:
 
         :param labels: The training labels.
         """
+        self.le = preprocessing.LabelEncoder()
+        self.le.fit(labels)
 
     def index(self, label: Text) -> int:
         """Returns the index in the vocabulary of the given label.
@@ -79,6 +98,8 @@ class TextToLabels:
         :param label: A label
         :return: The unique integer index associated with the label.
         """
+        pam = list(self.le.classes_).index(label)
+        return pam
 
     def __call__(self, labels: Iterable[Text]) -> NDArray:
         """Creates a label vector from a sequence of labels.
@@ -89,12 +110,17 @@ class TextToLabels:
         :param labels: A sequence of labels.
         :return: A vector, with one entry for each label.
         """
+        x = self.le.transform(labels)
+        return x
 
+from sklearn.linear_model import LogisticRegression
 
 class Classifier:
     def __init__(self):
         """Initalizes a logistic regression classifier.
         """
+        self.clf = LogisticRegression()
+
 
     def train(self, features: NDArray, labels: NDArray) -> None:
         """Trains the classifier using the given training examples.
@@ -104,6 +130,7 @@ class Classifier:
         :param labels: A label vector, where each entry represents a label.
         Such vectors will typically be generated via TextToLabels.
         """
+        self.clf.fit(features, labels)
 
     def predict(self, features: NDArray) -> NDArray:
         """Makes predictions for each of the given examples.
@@ -112,3 +139,5 @@ class Classifier:
         Such matrices will typically be generated via TextToFeatures.
         :return: A prediction vector, where each entry represents a label.
         """
+        pred = self.clf.predict(features)
+        return pred
