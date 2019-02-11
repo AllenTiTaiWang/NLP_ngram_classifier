@@ -47,7 +47,7 @@ class TextToFeatures:
 
         :param texts: The training texts.
         """
-        self.vec = CountVectorizer(ngram_range=(1, 2))
+        self.vec = CountVectorizer(analyzer = 'char', ngram_range=(1, 6))
         self.X = self.vec.fit_transform(texts)
 
     def index(self, feature: Text):
@@ -74,7 +74,7 @@ class TextToFeatures:
         :return: A matrix, with one row of feature values for each text.
         """
         x = self.vec.transform(texts)
-        return x.toarray()
+        return x
 
 from sklearn import preprocessing
 
@@ -119,7 +119,7 @@ class Classifier:
     def __init__(self):
         """Initalizes a logistic regression classifier.
         """
-        self.clf = LogisticRegression()
+        self.clf = LogisticRegression(penalty = 'l1', solver = 'liblinear', C = 1.5)
 
 
     def train(self, features: NDArray, labels: NDArray) -> None:
