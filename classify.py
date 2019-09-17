@@ -48,15 +48,18 @@ class TextToFeatures:
         :param texts: The training texts.
         """
         self.vec = CountVectorizer(analyzer = 'char', ngram_range=(1, 6))
-        self.X = self.vec.fit_transform(texts)
-
+       # self.X = self.vec.fit_transform(texts)
+        self.vec.fit(texts)
+        
     def index(self, feature: Text):
         """Returns the index in the vocabulary of the given feature value.
 
         :param feature: A feature
         :return: The unique integer index associated with the feature.
         """
-        n = self.vec.get_feature_names().index(feature)
+        #n = self.vec.get_feature_names().index(feature)
+        n = self.vec.vocabulary_[feature]
+
         return n
 
     def __call__(self, texts: Iterable[Text]) -> NDArray:
@@ -98,7 +101,9 @@ class TextToLabels:
         :param label: A label
         :return: The unique integer index associated with the label.
         """
-        pam = list(self.le.classes_).index(label)
+        #pam = list(self.le.classes_).index(label)
+        pam = self.le.transform([label])[0]
+
         return pam
 
     def __call__(self, labels: Iterable[Text]) -> NDArray:
